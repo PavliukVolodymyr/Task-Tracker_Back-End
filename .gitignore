@@ -9,10 +9,12 @@ __pycache__/
 *.pyw
 *.pyc
 
+
 # Virtual Environment
 venv/
 env/
 MyVenv/
+MyVenv
 
 # IDE
 .idea/
