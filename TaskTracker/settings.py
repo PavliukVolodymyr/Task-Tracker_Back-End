@@ -46,6 +46,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+current_domain = "localhost:8000"
 
 # Application definition
 
@@ -167,14 +168,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = '587'
-EMAIL_USE_TLS = True
+# Отримати дані з конфігурації
+EMAIL_HOST = config.get('email', 'host')
+EMAIL_PORT = config.get('email', 'port')
+EMAIL_USE_TLS = config.getboolean('email', 'use_tls')
 
-EMAIL_HOST_USER = 'tasktrackeralert@gmail.com'
-EMAIL_HOST_PASSWORD = 'fxgbdszyuwthsnde'
+EMAIL_HOST_USER = config.get('email', 'host_user')
+EMAIL_HOST_PASSWORD = config.get('email', 'host_password')
 
-EMAIL_SERVER = EMAIL_HOST_USER
-DEFAULT_FROM_EMAIL = 'tasktrackeralert@gmail.com'
-
-SITE_ID = 1  
+DEFAULT_FROM_EMAIL = config.get('email', 'default_from_email')
+SITE_ID = config.getint('email', 'site_id')

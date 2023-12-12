@@ -5,6 +5,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.urls import reverse
 from .models import EmailVerification
+from django.conf import settings
 
 
 
@@ -22,7 +23,6 @@ def send_email_verification_email(user):
     email_verification.verification_token = generate_token()
     email_verification.save()
 
-    current_domain = "localhost:8000"
 
     verification_link = reverse('email-verification-confirm', kwargs={'user_id': user.id, 'token': email_verification.verification_token})
     full_verification_link = f'http://{current_domain}{verification_link}'
