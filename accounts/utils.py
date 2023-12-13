@@ -5,8 +5,9 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.urls import reverse
 from .models import EmailVerification
-from django.conf import settings
 
+
+current_domain = "localhost:8000"
 
 
 def generate_token():
