@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
@@ -12,6 +13,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .utils import send_email_verification_email
 from .models import EmailVerification
+from rest_framework import permissions
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+
 
 
 
@@ -44,6 +49,7 @@ class RegistrationView(generics.CreateAPIView):
             user.save()
 
         return user
+
 
 
 class LoginView(generics.CreateAPIView):
@@ -102,3 +108,44 @@ class EmailVerificationView(View):
                 'access_token': str(refresh.access_token),
                 'refresh_token': str(refresh),
             })
+
+
+
+class RefreshTokenView(APIView):
+
+    def post(self, request):
+        refresh_token = request.data.get('refresh_token')
+
+        try:
+            token = RefreshToken(refresh_token)
+            access_token = str(token.access_token)
+            return Response({'access': access_token})
+        except Exception as e:
+            return Response({'error': 'Invalid token or token expired.'})
+
+
+
+@api_view(['POST'])
+def user_logout(request):
+    refresh_token = request.data.get('refresh_token')
+
+    if not refresh_token:
+        return Response({'message': 'Refresh token not provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({'message': 'Logout successful.'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': 'Invalid refresh token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+def is_access_token_valid(access_token_str):
+    try:
+        access_token = AccessToken(access_token_str)
+        # Якщо токен валідний, повернути True
+        return True
+    except Exception as e:
+        # Якщо виникла помилка при перевірці токена, повернути False
+        return False
