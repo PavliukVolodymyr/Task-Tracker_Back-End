@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
-from .serializers import UserSerializer, LoginSerializer
+from .serializers import UserSerializer, LoginSerializer, UserProfileSerializer
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
@@ -11,13 +11,15 @@ from django.shortcuts import get_object_or_404
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from .utils import send_email_verification_email
-from .models import EmailVerification
+from .utils import send_email_verification_email, is_access_token_valid
+from .models import EmailVerification, UserProfile
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
+from .utils import valid_user
+from django.contrib.auth.models import User
 
-
+ 
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -103,6 +105,9 @@ class EmailVerificationView(View):
             user = email_verification.user
             refresh = RefreshToken.for_user(user)
 
+            # Створення профілю якщо його немає
+            profile, created = UserProfile.objects.get_or_create(user=user)
+
             return JsonResponse({
                 'detail': 'Email verified successfully.',
                 'access_token': str(refresh.access_token),
@@ -141,11 +146,97 @@ def user_logout(request):
 
 
 
-def is_access_token_valid(access_token_str):
-    try:
-        access_token = AccessToken(access_token_str)
-        # Якщо токен валідний, повернути True
-        return True
-    except Exception as e:
-        # Якщо виникла помилка при перевірці токена, повернути False
-        return False
+
+class UserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserProfileSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        # Перевірка валідності токену перед отриманням профілю
+        access_token_str = request.headers.get('Authorization', '').split(' ')[1]
+        
+        user = valid_user(access_token_str)
+
+        # Отримання інформації зі стандартної моделі користувача
+        user_data = {
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email' : user.email,
+        }
+
+        # Пошук профілю за ідентифікатором користувача
+        try:
+            profile = UserProfile.objects.get(user=user)
+        except UserProfile.DoesNotExist:
+            return Response({'detail': 'Profile not found.'}, status=404)
+
+        # Об'єднання даних профілю та дані зі стандартної моделі користувача
+        combined_data = {'profile': UserProfileSerializer(profile).data, 'user': user_data}
+
+        return Response(combined_data)
+
+
+
+class EditUserView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        access_token_str = request.headers.get('Authorization', '').split(' ')[1]
+
+        # Валідація та отримання користувача
+        user = valid_user(access_token_str)
+
+        if isinstance(user, Response):
+            return user
+
+        # Використання UserSerializer для оновлення користувача
+        data = {'first_name': request.data.get('first_name', user.first_name),
+                'last_name': request.data.get('last_name', user.last_name)}
+        serializer = UserSerializer(user, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class UserProfilePhotoView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        user = valid_user(request.headers.get('Authorization', '').split(' ')[1])
+        if not user:
+            return Response({'detail': 'Invalid access token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            profile = UserProfile.objects.get(user=user)
+        except UserProfile.DoesNotExist:
+            return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        photo_url = profile.photo.url if profile.photo else None
+
+        absolute_photo_url = request.build_absolute_uri(photo_url) if photo_url else None
+
+        return Response({'photo_url': absolute_photo_url}, status=status.HTTP_200_OK)
+
+
+
+    def post(self, request, *args, **kwargs):
+        user = valid_user(request.headers.get('Authorization', '').split(' ')[1])
+        if not user:
+            return Response({'detail': 'Invalid access token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            profile = UserProfile.objects.get(user=user)
+        except UserProfile.DoesNotExist:
+            return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+        file_serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        if file_serializer.is_valid():
+            profile.photo = request.data.get('photo')
+            profile.save()
+            return Response({'detail': 'Photo uploaded successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)

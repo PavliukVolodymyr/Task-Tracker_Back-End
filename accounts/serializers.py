@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import UserProfile
 
 
 
@@ -26,3 +27,17 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
+
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    photo = serializers.ImageField(write_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ['photo']
+
+    def update(self, instance, validated_data):
+        instance.photo = validated_data.get('photo', instance.photo)
+        instance.save()
+        return instance
