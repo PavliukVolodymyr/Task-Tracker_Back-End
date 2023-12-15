@@ -1,9 +1,11 @@
 asgiref==3.7.2
 Django==3.2.23
+django-cors-headers==4.3.1
 django-environ==0.11.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
 mysqlclient==2.2.0
+Pillow==10.1.0
 PyJWT==2.8.0
 python-http-client==3.3.7
 pytz==2023.3.post1
