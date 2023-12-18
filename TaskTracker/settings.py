@@ -44,7 +44,7 @@ SECRET_KEY = config['SECRET']['KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'vaabr5.pythonanywhere.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'vaabr5.pythonanywhere.com', 'https://vaabr5.pythonanywhere.com']
 
 
 
@@ -61,7 +61,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework',
     'django.contrib.sites',
-    'corsheaders'
+    'corsheaders',
+    'boards'
 ]
 
 MIDDLEWARE = [
