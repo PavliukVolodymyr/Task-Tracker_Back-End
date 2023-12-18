@@ -240,3 +240,17 @@ class UserProfilePhotoView(APIView):
             return Response({'detail': 'Photo uploaded successfully.'}, status=status.HTTP_200_OK)
         else:
             return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class GetUserView(APIView):
+
+    def get(self, request, pk):
+
+        user = valid_user(request.headers.get('Authorization', '').split(' ')[1])
+        if not user:
+            return Response({'detail': 'Invalid access token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        search_user = get_object_or_404(User, pk=pk)
+        serializer = UserSerializer(search_user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

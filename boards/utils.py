@@ -3,6 +3,23 @@ from rest_framework_simplejwt.tokens import RefreshToken, Token
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.response import Response
 from django.contrib.auth.models import User
+from accounts.models import EmailVerification
+
+
+
+
+def check_valid_user_email(user):
+    if user:
+        try:
+            email_verification = EmailVerification.objects.get(user=user)
+            if email_verification.is_verified:
+                return True
+            else:
+                return Response({'detail': 'User email is not verified.'}, status=status.HTTP_403_FORBIDDEN)
+        except EmailVerification.DoesNotExist:
+            return Response({'detail': 'Email verification record not found for the user.'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({'detail': 'Invalid user.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import RegistrationView, LoginView
 from .views import EmailVerificationView, RefreshTokenView
 from .views import user_logout, UserProfileView, EditUserView
-from .views import UserProfilePhotoView
+from .views import UserProfilePhotoView, GetUserView
 
 
 
@@ -17,6 +17,7 @@ urlpatterns = [
     path('profile/edit/', EditUserView.as_view(), name='edit-user'),
     path('profile/photo/', UserProfilePhotoView.as_view(), name='user-profile-photo'),
     path('profile/photo/edit/', UserProfilePhotoView.as_view(), name='user-profile-photo'),
+    path('<int:pk>', GetUserView.as_view(), name='get-user'),
 
 ] 
 
