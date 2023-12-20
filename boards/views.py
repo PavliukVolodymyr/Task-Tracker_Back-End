@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Project, Board
+from .models import Project, Board, List
 from .serializers import ProjectSerializer, BoardSerializer
+from .serializers import ListSerializer
 from .utils import valid_user
 from django.shortcuts import get_object_or_404
 from accounts.models import EmailVerification
@@ -327,7 +328,7 @@ class UpdateBoard(APIView):
 
 
 class DeleteBoardView(APIView):
-    
+
     def delete(self, request, project_id, board_id):
         # Отримати токен із запиту
         access_token_str = request.headers.get('Authorization', '').split(' ')[1]
@@ -350,6 +351,80 @@ class DeleteBoardView(APIView):
         board.delete()
 
         return Response({'detail': 'Board deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+class CreateListView(APIView):
+
+    def post(self, request, board_id):
+        # Отримати токен із запиту
+        access_token_str = request.headers.get('Authorization', '').split(' ')[1]
+
+        # Перевірити валідність та отримати користувача
+        user = valid_user(access_token_str)
+
+        if user is None:
+            return Response({'detail': 'Invalid access token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Отримати дошку за ідентифікатором
+        try:
+            board = Board.objects.get(pk=board_id)
+        except Board.DoesNotExist:
+            return Response({'detail': 'Board not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Отримати проєкт, до якого належить дошка
+        project = board.project
+
+        # Перевірити чи користувач є автором або членом проєкту
+        if user.id != project.author.id:
+            if user not in project.participants.all():
+                return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Отримати дані для створення списку з тіла запиту
+        list_data = request.data
+        list_data['board'] = board.id
+        list_data['project'] = project.id
+
+        # Створити новий список
+        serializer = ListSerializer(data=list_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class EditListNameView(APIView):
+
+    def patch(self, request, list_id):
+        # Отримати токен із запиту та перевірити валідність користувача
+        access_token_str = request.headers.get('Authorization', '').split(' ')[1]
+        user = valid_user(access_token_str)
+        if user is None:
+            return Response({'detail': 'Invalid access token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Знайти список за ідентифікатором
+        list_instance = get_object_or_404(List, id=list_id)
+
+        project = list_instance.project
+
+        # Перевірити чи користувач є автором або членом проєкту
+        if user.id != project.author.id:
+            if user not in project.participants.all():
+                return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+        # Отримати нову назву списку з тіла запиту
+        new_name = request.data.get('name', '')
+
+        # Змінити назву та зберегти список
+        list_instance.name = new_name
+        list_instance.save()
+
+        # Серіалізувати та повернути відповідь
+        serializer = ListSerializer(list_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

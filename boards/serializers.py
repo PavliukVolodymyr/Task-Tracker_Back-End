@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Project, Board
+from .models import Project, Board, List
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -13,4 +13,11 @@ class ProjectSerializer(serializers.ModelSerializer):
 class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
-        fields = ['id', 'name', 'background_photo']
+        fields = ['id', 'name', 'description', 'background_photo']
+
+
+
+class ListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = List
+        fields = ['id', 'name', 'board', 'project']
