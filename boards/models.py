@@ -12,3 +12,11 @@ class Project(models.Model):
         return f"Project: {self.name}, Author: {self.author.username}"
 
 
+
+class Board(models.Model):
+    name = models.CharField(max_length=255)
+    background_photo = models.ImageField(upload_to='board_backgrounds/', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='boards')
+
+    def __str__(self):
+        return f"Board: {self.name}, Project: {self.project.name}"

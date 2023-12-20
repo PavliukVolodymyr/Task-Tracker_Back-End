@@ -2,6 +2,8 @@ from django.urls import path
 from .views import ProjectListView, AddParticipantByEmailView
 from .views import CreateProjectView, ProjectEditNameView
 from .views import ProjectListViewId, DeleteParticipantByEmailView
+from .views import CreateBoardView, BoardListView, BoardByIdView
+from .views import UserProjectsView, UpdateBoard, DeleteBoardView
 
 
 urlpatterns = [
@@ -15,4 +17,14 @@ urlpatterns = [
     path('projects/<int:project_id>/participants/<int:participant_id>/', 
                                                     DeleteParticipantByEmailView.as_view(),
                                                     name='delete-participant'),
+    path('projects/user', UserProjectsView.as_view(), name='user-projects'),
+
+
+    path('projects/<int:project_id>/boards/create/', CreateBoardView.as_view(), name='create-board'),
+    path('projects/<int:project_id>/boards/', BoardListView.as_view(), name='board-list'),
+    path('projects/<int:project_id>/boards/<int:board_id>/', BoardByIdView.as_view(), name='board-id'),
+    path('projects/<int:project_id>/boards/<int:board_id>/update/', UpdateBoard.as_view(), name='board-update'),
+    path('projects/<int:project_id>/boards/<int:board_id>/delete/', DeleteBoardView.as_view(), name='delete-board'),
+
+
 ]
