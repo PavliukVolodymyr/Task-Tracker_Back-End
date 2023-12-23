@@ -76,6 +76,7 @@ class LoginView(generics.CreateAPIView):
                         'detail': 'Login successful.',
                         'access_token': str(refresh.access_token),
                         'refresh_token': str(refresh),
+                        'ID' : int(user.id),
                     }, status=status.HTTP_200_OK)
                 else:
                     return Response({'detail': 'Email not verified. Please verify your email.'}, status=status.HTTP_401_UNAUTHORIZED)
