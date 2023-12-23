@@ -32,6 +32,7 @@ class CreateProjectView(APIView):
 
         # Додати користувача як автора проекту
         project_data['author'] = user.id
+        project_data['participants'] = [user.id]
 
         # Створити серіалізатор для зберігання даних проекту
         serializer = ProjectSerializer(data=project_data)
